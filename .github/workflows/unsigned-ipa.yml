@@ -46,6 +46,12 @@ jobs:
           # Strip app extensions: they consume extra free-account App IDs and
           # can fail AltStore re-signing; not needed for sideload testing
           rm -rf "$APP/PlugIns"
+          # Distinct home-screen / AltStore name so the test build can never be
+          # confused with the official Damus or with older test builds.
+          # Localized InfoPlist.strings would override it, so drop them.
+          find "$APP" -name "InfoPlist.strings" -delete
+          /usr/libexec/PlistBuddy -c "Delete :CFBundleDisplayName" "$APP/Info.plist" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'Damus Fix ${{ github.run_number }}'" "$APP/Info.plist"
           mkdir -p Payload
           cp -R "$APP" Payload/
           zip -qry "damus-1.18.${{ github.run_number }}.ipa" Payload
