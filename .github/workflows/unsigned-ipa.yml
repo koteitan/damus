@@ -1,0 +1,54 @@
+name: Unsigned IPA
+
+on:
+  push:
+    branches:
+      - fix-3545-cursor-jump
+  workflow_dispatch:
+
+jobs:
+  build-unsigned-ipa:
+    runs-on: macos-26
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # Debug configuration: Release (-O) crashes the Xcode 26.5 Swift
+      # optimizer (GenericSpecializer) on this codebase; Debug is fine for
+      # sideload testing. ENABLE_DEBUG_DYLIB=NO keeps the app self-contained
+      # so AltStore re-signing works.
+      - name: Build unsigned app for device
+        run: |
+          xcodebuild \
+            -scheme damus \
+            -configuration Debug \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            ENABLE_DEBUG_DYLIB=NO \
+            -quiet \
+            build
+
+      - name: Package IPA
+        run: |
+          APP=build/Build/Products/Debug-iphoneos/damus.app
+          # Strip app extensions: they consume extra free-account App IDs and
+          # can fail AltStore re-signing; not needed for sideload testing
+          rm -rf "$APP/PlugIns"
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          zip -qry damus-unsigned.ipa Payload
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: damus-unsigned-ipa
+          path: damus-unsigned.ipa
+          retention-days: 14
