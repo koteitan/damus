@@ -126,7 +126,10 @@ extension DamusUserDefaults {
                 case Constants.NOTIFICATION_EXTENSION_BUNDLE_IDENTIFIER:
                     return Self.shared
                 default:
-                    return Self.shared
+                    // Re-signed sideload builds get a suffixed bundle id and lose
+                    // access to the shared app group; use the standard container
+                    // so settings and the saved pubkey persist across launches
+                    return Self.app
             }
         }
     }

@@ -33,6 +33,8 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             ENABLE_DEBUG_DYLIB=NO \
+            MARKETING_VERSION=1.18.${{ github.run_number }} \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
             -quiet \
             build
 
